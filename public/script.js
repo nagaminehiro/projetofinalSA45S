@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const userName = document.getElementById('user-name');
     const message = document.getElementById('message');
     const logoutBtn = document.getElementById('logout-btn');
+    const blindSqlBtn = document.getElementById('blind-sql-btn');
 
     // Check if user is already logged in
     checkLoginStatus();
@@ -62,6 +63,57 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (err) {
             console.error('Logout error:', err);
+        }
+    });
+
+    // Blind SQL Injection button
+    blindSqlBtn.addEventListener('click', async function() {
+        if (!window.confirm('Deseja realmente executar a demonstração de Blind SQL Injection?')) return;
+        console.clear();
+        console.log('%cIniciando ataque Blind SQL Injection para extrair a senha do admin...','color:orange;font-weight:bold');
+        try {
+            const response = await fetch('/api/blind-sql-injection', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (!response.body) {
+                console.error('Streaming não suportado.');
+                return;
+            }
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let done = false;
+            let buffer = '';
+            while (!done) {
+                const { value, done: doneReading } = await reader.read();
+                done = doneReading;
+                if (value) {
+                    buffer += decoder.decode(value, { stream: true });
+                    let lines = buffer.split('\n');
+                    buffer = lines.pop();
+                    for (const line of lines) {
+                        if (line.trim()) {
+                            try {
+                                const msg = JSON.parse(line);
+                                if (msg.type === 'progress') {
+                                    console.log(`%c[Posição ${msg.position}] Testando caractere: '${msg.char}'...`, 'color:gray');
+                                } else if (msg.type === 'found') {
+                                    console.log(`%c✔ Caractere encontrado na posição ${msg.position}: '${msg.char}'`, 'color:green');
+                                    console.log(`%cSenha parcial: ${msg.partial}`, 'color:cyan');
+                                } else if (msg.type === 'done') {
+                                    if (msg.password) {
+                                        console.log(`%cSenha extraída para admin: ${msg.password}`, 'background:green;color:white');
+                                    } else {
+                                        console.log('%cExtração finalizada. Não foi possível extrair a senha.', 'background:red;color:white');
+                                    }
+                                }
+                            } catch {}
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Erro ao executar Blind SQL Injection:', err);
         }
     });
 

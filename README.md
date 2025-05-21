@@ -27,7 +27,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=postgres
-DB_NAME=vulnerable_db
+DB_NAME=vulnerable_db //o db deve ser criado previamente no postgresql
 PORT=3000
 
 
@@ -43,9 +43,9 @@ npm start
 
 5. Acesse a aplicação em http://localhost:3000  
 
-## Demonstração de Vulnerabilidades  
+## Demonstração de Vulnerabilidades
 
-### Injeção SQL Cega  
+### Injeção SQL Cega
 
 A API de login em `/api/login` é vulnerável a injeção SQL devido à concatenação direta de strings em consultas SQL.  
 
@@ -56,6 +56,9 @@ Por exemplo, é possível contornar a autenticação com:
 Isso transforma a consulta em:  
 SELECT * FROM users WHERE username = 'admin' --' AND password = 'qualquer coisa'
 
+#### Demonstração via Interface Web
+
+Na tela de login, há um botão chamado **Blind SQL Injection (Demo)**. Ao clicar nele, a aplicação executa automaticamente um ataque de injeção SQL cega para extrair a senha do usuário `admin`. O progresso e o resultado do ataque são exibidos no console do navegador (pressione F12 para abrir o console antes de iniciar a demonstração).
 
 ### Exploração de Cookies de Rastreamento  
 
@@ -94,4 +97,4 @@ Para proteger esta aplicação em um ambiente real, recomenda-se:
 
 ## Uso Estritamente Educacional  
 
-Este código é fornecido exclusivamente para fins educacionais, a fim de compreender como essas vulnerabilidades funcionam. Sempre siga diretrizes éticas ao testar vulnerabilidades de segurança.  
+Este código é fornecido exclusivamente para fins educacionais, a fim de compreender como essas vulnerabilidades funcionam. Sempre siga diretrizes éticas ao testar vulnerabilidades de segurança.

