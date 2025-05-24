@@ -13,7 +13,8 @@ Esta aplicação contém código propositalmente vulnerável e NUNCA deve ser im
 ## Pré-requisitos  
 
 - Node.js (v14 ou posterior)  
-- Banco de dados PostgreSQL  
+- Banco de dados PostgreSQL
+- Banco de dados MySQL (opcional, para demonstração extra)
 
 ## Instruções de Configuração  
 
@@ -22,19 +23,33 @@ Esta aplicação contém código propositalmente vulnerável e NUNCA deve ser im
 npm install
 
 
-2. Configure as configurações do PostgreSQL no arquivo `.env`:  
+2. Configure as configurações do PostgreSQL e/ou MySQL no arquivo `.env`:
+
+Para PostgreSQL:
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=postgres
 DB_NAME=vulnerable_db //o db deve ser criado previamente no postgresql
+
+Para MySQL:
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=senha
+MYSQL_DATABASE=vulnerable_db_mysql //o db deve ser criado previamente no mysql
+
 PORT=3000
 
 
 
-3. Configure o banco de dados:  
+3. Configure o banco de dados:
 
+Para PostgreSQL:
 npm run setup-db
+
+Para MySQL:
+npm run setup-db-mysql
 
 
 4. Inicie o servidor:  
@@ -47,7 +62,7 @@ npm start
 
 ### Injeção SQL Cega
 
-A API de login em `/api/login` é vulnerável a injeção SQL devido à concatenação direta de strings em consultas SQL.  
+A API de login em `/api/login` (PostgreSQL) e `/api/login-mysql` (MySQL) é vulnerável a injeção SQL devido à concatenação direta de strings em consultas SQL.  
 
 Por exemplo, é possível contornar a autenticação com:  
 - Nome de usuário: `admin' --`  
@@ -58,7 +73,11 @@ SELECT * FROM users WHERE username = 'admin' --' AND password = 'qualquer coisa'
 
 #### Demonstração via Interface Web
 
-Na tela de login, há um botão chamado **Blind SQL Injection (Demo)**. Ao clicar nele, a aplicação executa automaticamente um ataque de injeção SQL cega para extrair a senha do usuário `admin`. O progresso e o resultado do ataque são exibidos no console do navegador (pressione F12 para abrir o console antes de iniciar a demonstração).
+Na tela de login, há dois botões:
+- **Blind SQL Injection (Demo)**: executa o ataque no banco PostgreSQL.
+- **Blind SQL Injection (MySQL)**: executa o ataque no banco MySQL.
+
+O progresso e o resultado do ataque são exibidos no console do navegador (pressione F12 para abrir o console antes de iniciar a demonstração).
 
 ### Exploração de Cookies de Rastreamento  
 
@@ -98,3 +117,7 @@ Para proteger esta aplicação em um ambiente real, recomenda-se:
 ## Uso Estritamente Educacional  
 
 Este código é fornecido exclusivamente para fins educacionais, a fim de compreender como essas vulnerabilidades funcionam. Sempre siga diretrizes éticas ao testar vulnerabilidades de segurança.
+
+
+
+Repositório: https://github.com/nagaminehiro/projetofinalSA45S
