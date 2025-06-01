@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "setup-db": "node setup-db.js"
+    "setup-db": "node setup-db.js",
+    "setup-db-mysql": "node setup-db-mysql.js"
   },
   "dependencies": {
     "chalk": "^5.4.1",
@@ -13,6 +14,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "mysql2": "^3.14.1",
     "pg": "^8.11.3"
   }
 }

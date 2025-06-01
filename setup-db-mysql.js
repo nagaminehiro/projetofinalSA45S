@@ -12,13 +12,13 @@ const mysqlPool = mysql.createPool({
 async function setupMySQLDatabase() {
   try {
     // Cria tabela users
+    await mysqlPool.query(`DROP TABLE IF EXISTS users;`);
     await mysqlPool.query(`
-      DROP TABLE IF EXISTS users;
       CREATE TABLE users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        username VARCHAR(50) UNIQUE NOT NULL,
-        password VARCHAR(50) NOT NULL,
-        is_admin BOOLEAN DEFAULT FALSE,
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        username VARCHAR(50),
+        password VARCHAR(50),
+        is_admin TINYINT(1) DEFAULT 0,
         email VARCHAR(100)
       );
     `);
@@ -26,15 +26,15 @@ async function setupMySQLDatabase() {
     // Insere usuários de teste
     await mysqlPool.query(`
       INSERT INTO users (username, password, is_admin, email) VALUES
-      ('admin', 'supersecretpassword123!', TRUE, 'admin@example.com'),
-      ('john', 'password123', FALSE, 'john@example.com'),
-      ('alice', 'alicepass', FALSE, 'alice@example.com'),
-      ('bob', 'bobsecure', FALSE, 'bob@example.com');
+      ('admin', 'supersecretpassword123!', 1, 'admin@example.com'),
+      ('john', 'password123', 0, 'john@example.com'),
+      ('alice', 'alicepass', 0, 'alice@example.com'),
+      ('bob', 'bobsecure', 0, 'bob@example.com');
     `);
 
-    console.log('Banco de dados MySQL configurado com sucesso');
-  } catch (err) {
-    console.error('Erro ao configurar o banco MySQL:', err);
+    console.log('Banco de dados MySQL configurado com sucesso!');
+  } catch (error) {
+    console.error('Erro ao configurar o banco MySQL:', error);
   } finally {
     await mysqlPool.end();
   }

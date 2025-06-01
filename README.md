@@ -1,14 +1,15 @@
 # Demonstração de Serviço Web Vulnerável  
 
-Este projeto demonstra vulnerabilidades comuns da web, incluindo injeção SQL cega e rastreamento de cookies, apenas para fins educacionais.  
+Este projeto demonstra vulnerabilidades comuns da web, incluindo injeção SQL cega, ataques de dicionário e rastreamento de cookies, apenas para fins educacionais.  
 
 ## ⚠️ AVISO ⚠️  
 
 Esta aplicação contém código propositalmente vulnerável e NUNCA deve ser implantada em um ambiente de produção. Ela foi projetada estritamente para fins educacionais, para demonstrar:  
 
 1. Vulnerabilidades de injeção SQL cega  
-2. Problemas relacionados a rastreamento de cookies  
-3. Mecanismos de autenticação inseguros  
+2. Ataques de dicionário para quebra de senhas
+3. Problemas relacionados a rastreamento de cookies  
+4. Mecanismos de autenticação inseguros  
 
 ## Pré-requisitos  
 
@@ -89,20 +90,62 @@ Para ver essas vulnerabilidades em ação, execute os scripts de exploração fo
 
 1. Vá para o diretório de exploração:  
 
+```
 cd exploit
-
+```
 
 2. Instale as dependências:  
 
+```
 npm install
-
+```
 
 3. Execute o exploit:  
 
-node blind-sql-injection.js
+   a. Para executar apenas o ataque de injeção SQL cega:
+   ```
+   node blind-sql-injection.js
+   ```
+   
+   b. Para executar o ataque combinado (dicionário + injeção SQL cega):
+   ```
+   node combined-attack.js
+   ```
 
+## Estratégias de Ataque Implementadas
 
-Isso demonstrará como um invasor poderia extrair a senha do administrador usando injeção SQL cega e rastrear sessões de usuários com cookies.  
+### 1. Ataque de Dicionário
+
+O ataque de dicionário tenta fazer login usando uma lista predefinida de senhas comuns do arquivo `password-dictionary.txt`. Esta é uma estratégia mais rápida que tenta as senhas mais comuns primeiro.
+
+- Arquivo: `combined-attack.js`
+- Função: `dictionaryAttack()`
+- Vantagens: Rápido, menos invasivo, eficaz contra senhas fracas
+
+### 2. Ataque de Força Bruta (Injeção SQL Cega)
+
+Este método extrai a senha caractere por caractere usando injeção SQL cega. É uma abordagem mais lenta, mas pode descobrir qualquer senha.
+
+- Arquivo: `blind-sql-injection.js` e `combined-attack.js`
+- Função: `extractPassword()`
+- Vantagens: Pode extrair qualquer senha, independente de sua complexidade
+
+### Abordagem Estratégica Combinada
+
+O script `combined-attack.js` implementa uma abordagem estratégica:
+1. Primeiro tenta o ataque de dicionário (mais rápido)
+2. Se falhar, passa automaticamente para o ataque de injeção SQL cega
+3. Também demonstra a exploração de cookies de rastreamento
+
+Esta estratégia otimiza o processo de descoberta de senhas, usando primeiro o método mais rápido e recorrendo ao método mais demorado apenas quando necessário.
+
+## Mitigações
+
+Para proteger aplicações reais contra esses tipos de ataques:
+
+1. **Contra Injeção SQL**: Use consultas parametrizadas ou ORM
+2. **Contra Ataques de Dicionário**: Implemente limitação de taxa, políticas de senha forte e autenticação de dois fatores
+3. **Contra Rastreamento Excessivo**: Obtenha consentimento explícito e minimize a coleta de dados
 
 ## Protegendo a Aplicação  
 
@@ -121,3 +164,4 @@ Este código é fornecido exclusivamente para fins educacionais, a fim de compre
 
 
 Repositório: https://github.com/nagaminehiro/projetofinalSA45S
+
